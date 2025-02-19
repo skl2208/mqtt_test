@@ -1,0 +1,62 @@
+name: mqtt_test
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^18.0.1
+  flutter_timezone: ^4.1.0
+  logger: ^2.5.0
+  mqtt_client: ^10.5.1
+  rxdart: ^0.28.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - asset/images/
+    - asset/images/social/
+    - asset/images/outstanding/
+    - asset/images/background/
+    - asset/images/animation/
+
+  fonts:
+    - family: Prompt
+      fonts:
+        - asset: asset/font/Prompt-Regular.ttf
+    - family: Anuphan
+      fonts:
+        - asset: asset/font/Anuphan-Regular.ttf
+    - family: Ibm
+      fonts:
+        - asset: asset/font/IBMPlexSansThai-Regular.ttf
+    - family: Ibm-Bold
+      fonts:
+        - asset: asset/font/IBMPlexSansThai-Bold.ttf
+    - family: Kanit
+      fonts:
+        - asset: asset/font/kanit_regular.ttf
+    - family: Kanit-Bold
+      fonts:
+        - asset: asset/font/kanit_bold.ttf
+    - family: Mission
+      fonts:
+        - asset: asset/font/Mission.ttf
+    - family: Naknon
+      fonts:
+        - asset: asset/font/Nakhon.ttf
+    - family: Chonburi
+      fonts:
+        - asset: asset/font/Chonburi/Chonburi-Regular.ttf
+    - family: Pridi
+      fonts:
+        - asset: asset/font/Pridi/Pridi-Regular.ttf
