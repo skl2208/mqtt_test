@@ -1,0 +1,2 @@
+C:/Work/WI Project/Source/mqtt_test/android/app/.cxx/Debug/5o2t6m70/x86_64/CMakeFiles/edit_cache.dir
+C:/Work/WI Project/Source/mqtt_test/android/app/.cxx/Debug/5o2t6m70/x86_64/CMakeFiles/rebuild_cache.dir

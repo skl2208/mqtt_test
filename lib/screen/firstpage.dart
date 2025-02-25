@@ -1,13 +1,11 @@
 import "dart:async";
-import "dart:io";
-
 import "package:flutter/material.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "package:logger/logger.dart";
-import "package:mqtt_client/mqtt_server_client.dart";
-
-import "package:mqtt_test/service/mqtt_service.dart";
-
+import "package:mqtt_test/main.dart";
+import "package:mqtt_test/model/mqtt_model.dart";
+import "package:mqtt_test/service/mqtt_controller.dart";
+import "package:mqtt_test/service/notification_controller.dart";
 import "package:mqtt_test/util/appstyle.dart";
 
 final logger = Logger();
@@ -31,44 +29,178 @@ class FirstScr extends StatefulWidget {
 
 class _FirstScrState extends State<FirstScr> {
   String status = "initialize";
-  bool _notificationsEnabled = false;
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-  InitializationSettings? initializationSettings;
-  AndroidInitializationSettings? androidInitializationSettings;
-
   TextEditingController msgController = TextEditingController();
-
+  MqttConfig mqttConfig = MqttConfig(
+    broker: "dev.worldinfinity.co.th",
+    username: "admin",
+    password: "admin",
+    pid: "123456789",
+    topicname: "user/123456789/message",
+    clientID: "1100702035898",
+    port: 1883,
+  );
+  //late MqttServerClient client;
+  // static final pid = "123456789";
+  // static final broker = "1d7b11a752bc4061bcf4bba4559c8155.s1.eu.hivemq.cloud";
+  // static final username = "lsukuem";
+  // static final password = "an4@3J83K9V3zHq";
+  // static final topicName = "User/Msg/$pid";
+  // static final pid = mqttConfig.pid;
+  // static final broker = "dev.worldinfinity.co.th";
+  // static final username = "admin";
+  // static final password = "admin";
+  // static final clientID = "1100702035898";
+  // static final topicName = "user/$pid/message";
+  String msgFromMqtt = "";
+  MqttCurrentConnectionState connectionState = MqttCurrentConnectionState.IDLE;
+  MqttSubscriptionState subscriptionState = MqttSubscriptionState.IDLE;
   int notid = 0;
+  List<String> allmsg = [];
 
-  Future<void> initializMqttServer() async {
-    try {
-      MQTTClientWrapper().prepareMqttClient();
-    } catch (e) {
-      logger.e(e);
-    }
+  // Future<void> initializeMqttServer() async {
+  //   try {
+  //     client = MqttServerClient.withPort(broker, 'flutter_client', 8883);
+  //     // the next 2 lines are necessary to connect with tls, which is used by HiveMQ Cloud
+  //     client.secure = true;
+  //     client.securityContext = SecurityContext.defaultContext;
+  //     client.keepAlivePeriod = 20;
+  //     // client.onDisconnected = _onDisconnected;
+  //     //client.onConnected = _onConnected;
+  //     // client.onSubscribed = _onSubscribed;
+  //     setState(() {
+  //       status = "Starting...";
+  //     });
+  //     await client.connect(username, password);
+
+  //     //   logger.i("Starting...");
+  //     //   await connectClient();
+  //     //   subscribeToTopic('User/Msg/123456789');
+  //     if (client.connectionStatus!.state == MqttConnectionState.connected) {
+  //       connectionState = MqttCurrentConnectionState.CONNECTED;
+  //       setState(() {
+  //         status = "Connected";
+  //       });
+  //       client.subscribe(topicName, MqttQos.atMostOnce);
+  //       client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+  //         final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+  //         final a =
+  //             MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+  //         Uint8List bytes = latin1.encode(a);
+  //         msgFromMqtt = utf8.decode(bytes);
+
+  //         showNotification(inputMsg: msgFromMqtt);
+  //         setState(() {
+  //           allmsg.add(msgFromMqtt);
+  //         });
+
+  //         addInbox();
+  //         // if (kDebugMode) {
+  //         //   print('YOU GOT A NEW MESSAGE:');
+  //         //   print(msg);
+  //         // }
+  //       });
+  //     } else {
+  //       setState(() {
+  //         status =
+  //             "ERROR client connection failed - disconnecting, status is ${client.connectionStatus}";
+  //       });
+
+  //       connectionState = MqttCurrentConnectionState.ERROR_WHEN_CONNECTING;
+  //       client.disconnect();
+  //     }
+  //   } catch (e) {
+  //     logger.e(e);
+  //   }
+  // }
+
+  // Future<void> initializeMqttServer() async {
+  //   setState(() {
+  //     status = "Starting...";
+  //   });
+
+  //   try {
+  //     client = MqttServerClient(mqttConfig.broker!, '');
+  //     client.logging(on: true);
+  //     client.port = mqttConfig.port!;
+  //     client.secure = false;
+  //     client.securityContext = SecurityContext.defaultContext;
+  //     client.keepAlivePeriod = 20;
+  //     client.onDisconnected = onDisconnected;
+  //     client.onConnected = onConnected;
+  //     // client.onSubscribed = _onSubscribed;
+  //     final connMessage = MqttConnectMessage()
+  //         .withClientIdentifier(mqttConfig.clientID!)
+  //         .authenticateAs(mqttConfig.username, mqttConfig.password)
+  //         .startClean()
+  //         .withWillQos(MqttQos.atMostOnce);
+
+  //     client.connectionMessage = connMessage;
+
+  //     await client.connect();
+
+  //     logger.i(client.connectionStatus!.state.toString());
+
+  //     if (client.connectionStatus!.state == MqttConnectionState.connected) {
+  //       connectionState = MqttCurrentConnectionState.CONNECTED;
+  //       setState(() {
+  //         status = "Connected";
+  //       });
+  //       client.subscribe(mqttConfig.topicname!, MqttQos.atMostOnce);
+  //       client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+  //         final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+  //         final a =
+  //             MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+  //         Uint8List bytes = latin1.encode(a);
+  //         msgFromMqtt = utf8.decode(bytes);
+  //         NotificationController.sendNotification(inputMsg: msgFromMqtt);
+  //         setState(() {
+  //           allmsg.add(msgFromMqtt);
+  //         });
+
+  //         addInbox();
+  //         // if (kDebugMode) {
+  //         //   print('YOU GOT A NEW MESSAGE:');
+  //         //   print(msg);
+  //         // }
+  //       });
+  //     } else {
+  //       setState(() {
+  //         status =
+  //             "ERROR client connection failed - disconnecting, status is ${client.connectionStatus}";
+  //       });
+
+  //       connectionState = MqttCurrentConnectionState.ERROR_WHEN_CONNECTING;
+  //       client.disconnect();
+  //     }
+  //   } catch (e) {
+  //     logger.e(e);
+  //     setState(() {
+  //       status =
+  //           "ERROR client connection failed - disconnecting, status is ${client.connectionStatus}";
+  //     });
+  //     connectionState = MqttCurrentConnectionState.ERROR_WHEN_CONNECTING;
+  //     client.disconnect();
+  //   }
+  // }
+
+  addInbox() async {}
+
+  Future<void> setMQTT() async {
+    final laststatus = await MqttController().initializeMqttServer(mqttConfig);
+    setState(() {
+      status = laststatus;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    initializMqttServer();
 
-    initializationSettings = const InitializationSettings(
-      android: AndroidInitializationSettings(
-          '@mipmap-hdpi/ic_launcher'), // Replace with your icon
-      iOS: DarwinInitializationSettings(), // Or relevant platform settings
-    );
-
-    flutterLocalNotificationsPlugin.initialize(
-      initializationSettings!,
-      onDidReceiveNotificationResponse:
-          onSelectNotification, // Add this if you haven't already
-    );
-
-    _isAndroidPermissionGranted();
-    _requestPermissions();
-    _configureSelectNotificationSubject();
+    try {
+      setMQTT();
+    } catch (e) {
+      logger.e(e);
+    }
   }
 
   @override
@@ -87,77 +219,11 @@ class _FirstScrState extends State<FirstScr> {
 
   final StreamController<String?> selectNotificationStream =
       StreamController<String?>.broadcast();
-  void _configureSelectNotificationSubject() {
-    selectNotificationStream.stream.listen((String? payload) async {
-      // await Navigator.of(context).push(MaterialPageRoute<void>(
-      //   builder: (BuildContext context) => SecondPage(payload),
-      // ));
+
+  updateStatus({required String status}) {
+    setState(() {
+      this.status = status;
     });
-  }
-
-  Future<void> _requestPermissions() async {
-    if (Platform.isIOS || Platform.isMacOS) {
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              MacOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-    } else if (Platform.isAndroid) {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-
-      final bool? grantedNotificationPermission =
-          await androidImplementation?.requestNotificationsPermission();
-      setState(() {
-        _notificationsEnabled = grantedNotificationPermission ?? false;
-      });
-    }
-  }
-
-  Future<void> _isAndroidPermissionGranted() async {
-    if (Platform.isAndroid) {
-      final bool granted = await flutterLocalNotificationsPlugin
-              .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>()
-              ?.areNotificationsEnabled() ??
-          false;
-
-      setState(() {
-        _notificationsEnabled = granted;
-      });
-    }
-  }
-
-  Future<void> showNotification() async {
-    const AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails('001', 'TestApp',
-            channelDescription: 'your channel description',
-            importance: Importance.max,
-            priority: Priority.high,
-            ticker: 'ticker');
-    const DarwinNotificationDetails darwinNotificationDetails =
-        DarwinNotificationDetails(subtitle: "TestApp");
-    const NotificationDetails notificationDetails = NotificationDetails(
-        android: androidNotificationDetails, iOS: darwinNotificationDetails);
-    try {
-      await flutterLocalNotificationsPlugin.show(
-          1, 'mqtt_test', msgController.text.toString(), notificationDetails,
-          payload: 'item x');
-    } catch (e) {
-      logger.e(e);
-    }
   }
 
   @override
@@ -166,47 +232,116 @@ class _FirstScrState extends State<FirstScr> {
       appBar: AppBar(
         title: Text("MQTT", style: Main_Style().textBtn1),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade500,
+        backgroundColor: Colors.blue.shade900,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Status: $status",
-                style: Main_Style().normalText,
+      body: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                color: Colors.red.shade500,
               ),
-              Expanded(
-                  child: Container(
-                width: 100,
-              )),
-              TextFormField(
-                controller: msgController,
-                decoration:
-                    InputDecoration(labelText: "ใส่ข้อความที่ต้องการเตือน"),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Broker: ${mqttConfig.broker}",
+                          style: Main_Style().textBtn1),
+                      Text(
+                          "Username: ${mqttConfig.username} , Password: ${mqttConfig.password}",
+                          style: Main_Style().textBtn1),
+                      Text("PID: ${mqttConfig.pid}",
+                          style: Main_Style().textBtn1),
+                      Text("Topic: ${mqttConfig.topicname}",
+                          style: Main_Style().textBtn1),
+                      // Text(
+                      //     "Website : https://console.hivemq.cloud/clusters/1d7b11a752bc4061bcf4bba4559c8155/web-client",
+                      //     style: Main_Style().textBtn1),
+                    ]),
               ),
-              ElevatedButton(
-                style: Main_Style().buttonStyle1,
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                color: Colors.orange.shade500,
+              ),
+              child: Text("Status: $status", style: Main_Style().textBtn1),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                style: status == "Connected"
+                    ? Main_Style().buttonCancelStyle
+                    : Main_Style().buttonStyle1,
                 onPressed: () {
-                  //showAppToast(context: context, msg: "noti");
-                  FocusScope.of(context).unfocus();
-                  setState(() {
-                    showNotification();
-                  });
+                  if (status != "Connected") {
+                    setMQTT();
+                    //
+                  } else {
+                    setState(() {
+                      status = "Disconnected";
+                    });
+                    MqttController().disConnect();
+                  }
                 },
-                child:
-                    Text("Notification Testing", style: Main_Style().textBtn1),
+                child: status != "Connected"
+                    ? Text("Reconnect", style: Main_Style().textBtn1)
+                    : Text("Disconnect", style: Main_Style().textBtn1),
               ),
+            ),
+
+            // for (var i = 0; i < allmsg.length; i++)
+            //   Padding(
+            //     padding: const EdgeInsets.all(8.0),
+            //     child: Text("ข้อความ : ${allmsg[i]}",
+            //         style: Main_Style().normalText),
+            //   ),
+            Expanded(
+                child: Container(
+              width: 100,
+            )),
+            //========== MailBox ==========//
+            Stack(children: [
               SizedBox(
-                height: 50.0,
-              )
-            ],
-          ),
+                width: MediaQuery.of(context).size.width,
+                height: 200.0,
+                child: Icon(
+                  Icons.mail,
+                  size: 150,
+                  color: Colors.yellow.shade800,
+                ),
+              ),
+              Positioned(top: 0, right: 0, child: Text("")),
+            ]),
+            TextFormField(
+              controller: msgController,
+              decoration:
+                  InputDecoration(labelText: "ใส่ข้อความที่ต้องการเตือน"),
+            ),
+            ElevatedButton(
+              style: Main_Style().buttonStyle1,
+              onPressed: () {
+                //showAppToast(context: context, msg: "noti");
+                FocusScope.of(context).unfocus();
+                setState(() {
+                  NotificationController.sendNotification(
+                      inputMsg: msgController.text);
+                  // showNotification(inputMsg: msgController.text);
+                });
+              },
+              child: Text("Notification Testing", style: Main_Style().textBtn1),
+            ),
+            SizedBox(
+              height: 50.0,
+            )
+          ],
         ),
       ),
     );
