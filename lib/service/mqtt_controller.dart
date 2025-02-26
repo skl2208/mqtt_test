@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_test/model/mqtt_model.dart';
+import 'package:mqtt_test/model/notification_model.dart';
 import 'package:mqtt_test/screen/firstpage%20copy.dart';
 import 'package:mqtt_test/service/notification_controller.dart';
 
@@ -49,14 +50,23 @@ class MqttController {
       client.subscribe(mqttConfig.topicname!, MqttQos.atMostOnce);
       client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
         final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
-        // final a =
-        //     MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-
-        // Uint8List bytes = latin1.encode(a);
-        // msgFromMqtt = utf8.decode(bytes);
-        msgFromMqtt =
+        final a =
             MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-        NotificationController.sendNotification(inputMsg: msgFromMqtt);
+
+        Uint8List bytes = latin1.encode(a);
+        msgFromMqtt = utf8.decode(bytes);
+        // msgFromMqtt =
+        //     MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        if (recMess.header!.retain) {
+          logger.i(msgFromMqtt);
+        } else {
+          Map<String, dynamic> jsonMap = jsonDecode(msgFromMqtt);
+          final notificationMsg = NotificationModel.fromJson(jsonMap);
+          NotificationController.sendNotification(
+              inputMsg:
+                  "${notificationMsg.subject.toString()}, เรื่อง ${notificationMsg.detail!.title.toString()}");
+        }
+
         // setState(() {
         //   allmsg.add(msgFromMqtt);
         // });

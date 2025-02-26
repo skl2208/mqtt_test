@@ -44,7 +44,7 @@ class NotificationController {
   static void initialization() {
     const initializationSettings = InitializationSettings(
       android: AndroidInitializationSettings(
-          '@mipmap-hdpi/ic_launcher'), // Replace with your icon
+          '@mipmap/ic_launcher'), // Replace with your icon
       iOS: DarwinInitializationSettings(), // Or relevant platform settings
     );
 

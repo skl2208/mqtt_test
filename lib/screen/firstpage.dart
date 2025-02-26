@@ -35,7 +35,7 @@ class _FirstScrState extends State<FirstScr> {
     username: "admin",
     password: "admin",
     pid: "123456789",
-    topicname: "user/123456789/message",
+    topicname: "/user/lsukuem@gmail.com/message",
     clientID: "1100702035898",
     port: 1883,
   );
